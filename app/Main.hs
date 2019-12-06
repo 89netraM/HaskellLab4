@@ -4,13 +4,14 @@ import Data.Vector
 import Data.Vector.Split
 import Data.Maybe
 
-imSize = 784
-
---loadData:: FilePath -> FilePath -> IO (Maybe [(Int, Vector Int)])
 loadData file_lab file_dat = do
     m_idx_lab <- decodeIDXLabelsFile file_lab
     m_idx_dat <- decodeIDXFile file_dat
-    return (maybe Nothing (\idx_lab -> maybe Nothing (labeledIntData idx_lab) m_idx_dat) m_idx_lab)
+    return $ case m_idx_lab of
+        Just idx_lab -> case m_idx_dat of
+                            Just idx_dat -> labeledIntData idx_lab idx_dat
+                            Nothing      -> Nothing
+        Nothing      -> Nothing
 
 main = do
     idxdat <- decodeIDXFile "train-images-idx3-ubyte"
