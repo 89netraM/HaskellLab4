@@ -28,3 +28,5 @@ executables:
     - base
     - mnist-idx
     - matrix
+    - vector
+    - vector-split

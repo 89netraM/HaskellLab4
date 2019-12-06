@@ -1,16 +1,17 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.1.
+-- This file has been generated from package.yaml by hpack version 0.31.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e35ab1b1b97e4cb54f7331a8a9cf90243cf26aa960e1d2698251ffd05f290f0d
+-- hash: f1f7aaf1bf72939edf582a0ab5b596673615ac566b2e6c235c3445140ed07a2f
 
 name:           HaskellLab4
 version:        0.1.0.0
 homepage:       https://github.com/89netram/HaskellLab4#readme
 bug-reports:    https://github.com/89netram/HaskellLab4/issues
 author:         Julia Jansson & Mårten Åsberg
+maintainer:     Julia Jansson & Mårten Åsberg
 build-type:     Simple
 extra-source-files:
     README.md
@@ -30,4 +31,6 @@ executable HaskellLab4
       base
     , matrix
     , mnist-idx
+    , vector
+    , vector-split
   default-language: Haskell2010
