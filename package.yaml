@@ -26,3 +26,5 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - base
+    - mnist-idx
+    - matrix
