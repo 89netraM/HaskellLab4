@@ -29,4 +29,3 @@ executables:
     - mnist-idx
     - matrix
     - vector
-    - vector-split

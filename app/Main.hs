@@ -1,9 +1,13 @@
 import Data.IDX
 import Data.Matrix
-import Data.Vector
-import Data.Vector.Split
-import Data.Maybe
+import qualified Data.Vector.Unboxed as V
 
+train_images = "train-images-idx3-ubyte"
+train_labels = "train-labels-idx1-ubyte"
+test_images = "t10k-images-idx3-ubyte"
+test_labels = "t10k-labels-idx1-ubyte"
+
+loadData :: FilePath -> FilePath -> IO (Maybe [(Int, V.Vector Int)])
 loadData file_lab file_dat = do
     m_idx_lab <- decodeIDXLabelsFile file_lab
     m_idx_dat <- decodeIDXFile file_dat
@@ -13,7 +17,16 @@ loadData file_lab file_dat = do
                             Nothing      -> Nothing
         Nothing      -> Nothing
 
-main = do
-    idxdat <- decodeIDXFile "train-images-idx3-ubyte"
-    let train_vector = chunksOf 784 (idxIntContent (fromJust idxdat))
-    return (Prelude.head train_vector)
+-- | Returns a list of all the data as vectors.
+getDatas :: [(Int, V.Vector Int)] -> [Matrix Int]
+getDatas = map (rowVector . V.convert . snd)
+
+-- | Converts a label (int) to a vector label.
+makeLabelVector :: Int -> Matrix Int
+makeLabelVector n = fromList 1 10 $ replicate n 0 ++ (1:replicate (9-n) 0)
+
+-- | Returns a list of all the labels as vectors.
+getLabels :: [(Int, V.Vector Int)] -> [Matrix Int]
+getLabels = map (makeLabelVector . fst)
+
+main = undefined
