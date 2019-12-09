@@ -1,6 +1,8 @@
 import Data.IDX
 import Data.Matrix
 import qualified Data.Vector.Unboxed as V
+import Network
+import Matrix
 
 train_images = "train-images-idx3-ubyte"
 train_labels = "train-labels-idx1-ubyte"
