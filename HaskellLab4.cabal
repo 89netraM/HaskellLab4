@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e8982dfd6b6a172b5435d38e96da042d0b8c39892dba1a02547770dbd4e2e44a
+-- hash: 4e17e5385d101031b1a9b358bae57de288815564a238073072f5daa67895211d
 
 name:           HaskellLab4
 version:        0.1.0.0
@@ -35,5 +35,6 @@ executable HaskellLab4
     , base
     , matrix
     , mnist-idx
+    , normaldistribution
     , vector
   default-language: Haskell2010

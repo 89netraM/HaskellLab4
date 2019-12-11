@@ -3,7 +3,7 @@ module Network where
 import Data.Matrix
 import Test.QuickCheck
 import Matrix
---import Data.Random.Normal
+import Data.Random.Normal
 
 -------------------------------------
 -- | Types
@@ -17,6 +17,7 @@ type LayerResult = Matrix Double
 type Error = Matrix Double
 
 data Layer = Layer Weights Thresholds
+  deriving Show
 
 ----------------------------------------------
 learnRate:: Double
@@ -69,7 +70,7 @@ type Network = [Layer]
 
 -- | Takes a list of number of neurons for each layer and initializes a network
 network:: Int -> [Int] -> Network
-network seed (x:y:xs) = []
+network seed (x:y:xs) = [Layer (initWeights n1 n2) (initThresholds n2) | (n1, n2) <- zip (x:y:xs) (y:xs)]
   where initWeights:: Int -> Int -> Weights
         initWeights n1 n2 = fromList n2 n1 [0.0,0.0..]
         initThresholds:: Int -> Thresholds
