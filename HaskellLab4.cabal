@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 86da69d8e118ed3f495497f22f39b2d6d7c8871e67c7872812b89cf1c79e3147
+-- hash: e8982dfd6b6a172b5435d38e96da042d0b8c39892dba1a02547770dbd4e2e44a
 
 name:           HaskellLab4
 version:        0.1.0.0
@@ -23,6 +23,7 @@ source-repository head
 executable HaskellLab4
   main-is: Main.hs
   other-modules:
+      LoadMNISTdata
       Matrix
       Network
       Paths_HaskellLab4
