@@ -3,6 +3,7 @@ module Network where
 import Data.Matrix
 import Test.QuickCheck
 import Matrix
+import System.Random
 import Data.Random.Normal
 
 -------------------------------------
@@ -72,7 +73,11 @@ type Network = [Layer]
 network:: Int -> [Int] -> Network
 network seed (x:y:xs) = [Layer (initWeights n1 n2) (initThresholds n2) | (n1, n2) <- zip (x:y:xs) (y:xs)]
   where initWeights:: Int -> Int -> Weights
-        initWeights n1 n2 = fromList n2 n1 [0.0,0.0..]
+        initWeights n1 n2 = fromList n2 n1 (normalList gen1)
         initThresholds:: Int -> Thresholds
-        initThresholds n2 = fromList 1 n2 [0.0,0.0..]
+        initThresholds n2 = fromList 1 n2 (normalList gen2)
+        (gen1, gen2) = split $ mkStdGen seed
+        normalList :: RandomGen g => g -> [Double]
+        normalList g = r : normalList g'
+          where (r, g') = randomR (-1.0, 1.0) g
 network _ _ = error "Needs at least 2 layers: input and output"

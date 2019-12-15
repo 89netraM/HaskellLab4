@@ -31,3 +31,4 @@ executables:
     - vector
     - QuickCheck
     - normaldistribution
+    - random
