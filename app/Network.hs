@@ -70,9 +70,9 @@ type Network = [Layer]
 
 -- | Takes a list of number of neurons for each layer and initializes a network
 network:: Int -> [Int] -> Network
-network seed (x:y:xs) = [Layer (initWeights n1 n2) (initThresholds n2) | (n1, n2) <- zip (x:y:xs) (y:xs)]
-  where initWeights:: Int -> Int -> Weights
-        initWeights n1 n2 = fromList n2 n1 [0.0,0.0..]
+network seed (x:y:xs) = [Layer (initWeights n1 n2 r) (initThresholds n2) | ((n1, n2), r) <- zip (zip (x:y:xs) (y:xs)) [0,1..]]
+  where initWeights:: Int -> Int -> Int -> Weights
+        initWeights n1 n2 r = fromList n2 n1 (mkNormals' (0.0, 1.0 / (fromIntegral n1)) (seed + r))
         initThresholds:: Int -> Thresholds
         initThresholds n2 = fromList 1 n2 [0.0,0.0..]
 network _ _ = error "Needs at least 2 layers: input and output"
