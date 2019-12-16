@@ -67,8 +67,7 @@ backward err w layRes = (transpose $ multStd (transpose err) w) #* (gradient lay
 -- | layRes:  nIn*1
 -- | returns: nOut*nIn
 updateWeights:: Weights -> Error -> LayerResult -> Weights
-updateWeights w err prevlayRes =
-   w #+ (scaleMatrix learnRate prod)
+updateWeights w err prevlayRes = w #+ (scaleMatrix learnRate prod)
    where prod = multStd err (transpose prevlayRes)
 
 traceDim:: Num a => Matrix a -> Matrix a
