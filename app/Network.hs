@@ -23,9 +23,12 @@ data Layer = Layer Weights Thresholds
 learnRate:: Double
 learnRate = 0.1
 
+-- | w:      nOut*nIn
+-- | th:     nOut*1
+-- | layRes: nIn*1
 -- | Forward propagation
 forward:: Layer -> LayerResult -> LayerResult
-forward (Layer w th) layRes = fmap sigmoid (multStd w layRes #- th)
+forward (Layer w th) layRes = fmap sigmoid ((multStd w layRes) #- th)
 
 ---------------------------------------------
 -- | Sigmoid functions
@@ -42,21 +45,32 @@ gradient:: Num a => Matrix a -> Matrix a
 gradient = fmap (\x -> x*(1-x))
 
 -------------------------------------------------
+-- | lab:     nOut*1
+-- | layRes:  nOut*1
+-- | returns: nOut*1
 -- | The output error
 outputError:: Label -> LayerResult -> Error
-outputError lab layRes = gradient layRes #* (fmap fromIntegral lab #- layRes)
+outputError lab layRes = (gradient layRes) #* ((fmap fromIntegral lab) #- layRes)
 
--- | err:    1*nOut
--- | w:      nOut*nIn
--- | layRes: 1*nIn
+-- | err:     nOut*1
+-- | w:       nOut*nIn
+-- | layRes:  nIn*1
+-- | returns: nIn*1
 -- | Backpropagation
 backward:: Error -> Weights -> LayerResult -> Error
-backward err w layRes = multStd err w #* gradient layRes
+backward err w layRes = (transpose $ multStd (transpose err) w) #* (gradient layRes)
 
+-- | w:       nOut*nIn
+-- | err:     nOut*1
+-- | layRes:  nIn*1
+-- | returns: nOut*nIn
 updateWeights:: Weights -> Error -> LayerResult -> Weights
 updateWeights w err layRes =
-  w #+ scaleMatrix learnRate (multStd (transpose err) layRes)
+  w #+ (scaleMatrix learnRate (multStd err (transpose layRes)))
 
+-- | th:      nOut*1
+-- | err:     nOut*1
+-- | returns: nOut*1
 updateThresholds:: Thresholds -> Error -> Thresholds
 updateThresholds th err = th #- scaleMatrix learnRate err
 
@@ -74,7 +88,7 @@ network seed (x:y:xs) = [Layer (initWeights n1 n2 r) (initThresholds n2) | (n1, 
   where initWeights:: Int -> Int -> Int -> Weights
         initWeights n1 n2 r = fromList n2 n1 (mkNormals' (0.0, 1.0 / fromIntegral n1) (seed + r))
         initThresholds:: Int -> Thresholds
-        initThresholds n2 = fromList 1 n2 [0.0,0.0..]
+        initThresholds n2 = fromList n2 1 [0.0,0.0..]
 network _ _ = error "Needs at least 2 layers: input and output"
 
 ------------------------------------------------
@@ -103,3 +117,7 @@ mainLoop net ((p, l) : pls) = mainLoop net2 pls
         errs   = reverse $ outErr : backwardLoop net (tail revLay) outErr
         net2   = updateLoop net errs layers
 mainLoop net []             = net
+
+-- | Takes a (trained) network and a pattern, and returns it's guess of the answer.
+getResult:: Network -> Pattern -> LayerResult
+getResult net p = last $ forwardLoop net (fmap fromIntegral p)
