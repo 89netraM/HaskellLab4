@@ -70,7 +70,7 @@ type Network = [Layer]
 
 -- | Takes a list of number of neurons for each layer and initializes a network
 network:: Int -> [Int] -> Network
-network seed (x:y:xs) = [Layer (initWeights n1 n2 r) (initThresholds n2) | ((n1, n2), r) <- zip (zip (x:y:xs) (y:xs)) [0,1..]]
+network seed (x:y:xs) = [Layer (initWeights n1 n2 r) (initThresholds n2) | (n1, n2, r) <- zip3 (x:y:xs) (y:xs) [0,1..]]
   where initWeights:: Int -> Int -> Int -> Weights
         initWeights n1 n2 r = fromList n2 n1 (mkNormals' (0.0, 1.0 / (fromIntegral n1)) (seed + r))
         initThresholds:: Int -> Thresholds
