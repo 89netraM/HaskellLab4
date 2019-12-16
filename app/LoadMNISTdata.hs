@@ -26,5 +26,6 @@ makeLabelVector :: Int -> Matrix Int
 makeLabelVector n = fromList 1 10 $ replicate n 0 ++ (1:replicate (9-n) 0)
 
 -- | Returns a nicer representation of the data.
+-- | Pair of (Data as a matrix, Label as a matrix).
 makeNiceData :: [(Int, V.Vector Int)] -> [(Matrix Int, Matrix Int)]
-makeNiceData = map (\(l, v) -> (makeLabelVector l, rowVector $ V.convert v))
+makeNiceData = map (\(l, v) -> (rowVector $ V.convert v, makeLabelVector l))
