@@ -1,9 +1,10 @@
 module Network where
 
-import Data.Matrix
+import Data.Matrix hiding (trace)
 import Test.QuickCheck
 import Matrix
 import Data.Random.Normal
+import Debug.Trace
 
 -------------------------------------
 -- | Types
@@ -26,6 +27,7 @@ learnRate = 0.1
 -- | w:      nOut*nIn
 -- | th:     nOut*1
 -- | layRes: nIn*1
+-- | returns: nOut*1
 -- | Forward propagation
 forward:: Layer -> LayerResult -> LayerResult
 forward (Layer w th) layRes = fmap sigmoid ((multStd w layRes) #- th)
@@ -50,7 +52,7 @@ gradient = fmap (\x -> x*(1-x))
 -- | returns: nOut*1
 -- | The output error
 outputError:: Label -> LayerResult -> Error
-outputError lab layRes = (gradient layRes) #* ((fmap fromIntegral lab) #- layRes)
+outputError lab layRes = (gradient layRes) #* (fmap fromIntegral lab #- layRes)
 
 -- | err:     nOut*1
 -- | w:       nOut*nIn
@@ -65,8 +67,12 @@ backward err w layRes = (transpose $ multStd (transpose err) w) #* (gradient lay
 -- | layRes:  nIn*1
 -- | returns: nOut*nIn
 updateWeights:: Weights -> Error -> LayerResult -> Weights
-updateWeights w err layRes =
-  w #+ (scaleMatrix learnRate (multStd err (transpose layRes)))
+updateWeights w err prevlayRes =
+   w #+ (scaleMatrix learnRate prod)
+   where prod = multStd err (transpose prevlayRes)
+
+traceDim:: Num a => Matrix a -> Matrix a
+traceDim m = trace (show (nrows m, ncols m)) m
 
 -- | th:      nOut*1
 -- | err:     nOut*1
@@ -75,8 +81,8 @@ updateThresholds:: Thresholds -> Error -> Thresholds
 updateThresholds th err = th #- scaleMatrix learnRate err
 
 update:: Layer -> Error -> LayerResult -> Layer
-update (Layer w th) err layRes =
-  Layer (updateWeights w err layRes) (updateThresholds th err)
+update (Layer w th) err prevlayRes =
+  Layer (updateWeights w err prevlayRes) (updateThresholds th err)
 
 --------------------------------------------------
 -- | Network type
@@ -111,11 +117,13 @@ updateLoop _      _      _        = []
 
 mainLoop:: Network -> [(Pattern, Label)] -> Network
 mainLoop net ((p, l) : pls) = mainLoop net2 pls
-  where layers = forwardLoop net (fmap fromIntegral p)
+  where inputLayer :: LayerResult
+        inputLayer = (fmap fromIntegral p)
+        layers = forwardLoop net inputLayer
         revLay = reverse layers
         outErr = outputError l (head revLay)
         errs   = reverse $ outErr : backwardLoop net (tail revLay) outErr
-        net2   = updateLoop net errs layers
+        net2   = updateLoop net errs (inputLayer:layers)
 mainLoop net []             = net
 
 -- | Takes a (trained) network and a pattern, and returns it's guess of the answer.

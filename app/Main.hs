@@ -4,6 +4,7 @@ import qualified Data.Vector.Unboxed as V
 import Network
 import Matrix
 import LoadMNISTdata
+import Test
 import Test.QuickCheck
 
 -- | Main function running the training, and testing
@@ -14,3 +15,9 @@ labDat = do
     return $ makeNiceData raw
 
 netw = network 45678 [784, 10]
+
+smallData = do h <- labDat
+               return $ take 1000 h
+
+getFirstPatternResult net = do small <- smallData
+                               return (getResult net (fst (head small)))
