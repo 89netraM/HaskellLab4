@@ -21,14 +21,10 @@ loadData file_lab file_dat = do
                             Nothing      -> Nothing
         Nothing      -> Nothing
 
--- | Returns a list of all the data in matrix format instead of vectors.
-getDatas :: [(Int, V.Vector Int)] -> [Matrix Int]
-getDatas = map (rowVector . V.convert . snd)
-
 -- | Converts a label (int) to a vector label.
 makeLabelVector :: Int -> Matrix Int
 makeLabelVector n = fromList 1 10 $ replicate n 0 ++ (1:replicate (9-n) 0)
 
--- | Returns a list of all the labels as vectors.
-getLabels :: [(Int, V.Vector Int)] -> [Matrix Int]
-getLabels = map (makeLabelVector . fst)
+-- | Returns a nicer representation of the data.
+makeNiceData :: [(Int, V.Vector Int)] -> [(Matrix Int, Matrix Int)]
+makeNiceData = map (\(l, v) -> (makeLabelVector l, rowVector $ V.convert v))
