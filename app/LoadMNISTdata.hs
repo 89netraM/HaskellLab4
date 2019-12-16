@@ -23,9 +23,9 @@ loadData file_lab file_dat = do
 
 -- | Converts a label (int) to a vector label.
 makeLabelVector :: Int -> Matrix Int
-makeLabelVector n = fromList 1 10 $ replicate n 0 ++ (1:replicate (9-n) 0)
+makeLabelVector n = fromList 10 1 $ replicate n 0 ++ (1:replicate (9-n) 0)
 
 -- | Returns a nicer representation of the data.
 -- | Pair of (Data as a matrix, Label as a matrix).
 makeNiceData :: [(Int, V.Vector Int)] -> [(Matrix Int, Matrix Int)]
-makeNiceData = map (\(l, v) -> (rowVector $ V.convert v, makeLabelVector l))
+makeNiceData = map (\(l, v) -> (colVector $ V.convert v, makeLabelVector l))
