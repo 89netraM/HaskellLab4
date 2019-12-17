@@ -17,7 +17,7 @@ labDat = do
 netw = network 45678 [784, 10]
 
 smallData = do h <- labDat
-               return $ take 1000 h
+               return $ take 10 h
 
 getFirstPatternResult net = do small <- smallData
                                return (getResult net (fst (head small)))

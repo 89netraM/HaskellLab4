@@ -32,6 +32,8 @@ learnRate = 0.1
 forward:: Layer -> LayerResult -> LayerResult
 forward (Layer w th) layRes = fmap sigmoid ((multStd w layRes) #- th)
 
+prop_forward w th layRes = (nrows th, ncols th) == (nrows forward_value, ncols forward_value)
+  where forward_value = forward (Layer w th) layRes
 ---------------------------------------------
 -- | Sigmoid functions
 sigmoid:: Double -> Double
