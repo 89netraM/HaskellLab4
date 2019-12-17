@@ -34,4 +34,5 @@ executable HaskellLab4
       aeson
     , base
     , threepenny-gui
+    , QuickCheck
   default-language: Haskell2010

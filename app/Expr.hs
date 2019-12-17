@@ -1,6 +1,7 @@
 module Expr where
 
 import Prelude as P
+import qualified Test.QuickCheck as Q
 
 ------------------------------
 -- A
@@ -49,3 +50,33 @@ eval (Num d) _ = d
 eval Var v    = v
 eval (Op (Operator op _) e1 e2) v = op (eval e1 v) (eval e2 v)
 eval (Fun (Function f _) e) v = f (eval e v)
+
+----------------------------------
+-- E
+-- Waiting for Part D
+-- prop_ShowReadExpr :: Expr -> Bool
+-- prop_ShowReadExpr expr = (readExpr $ showExpr expr) == expr
+
+arbExpr :: Int -> Q.Gen Expr
+arbExpr s = Q.frequency [(1, rNum), (s, rExp)]
+  where
+    rNum = do
+      n <- Q.choose (0.0, 99.0)
+      return $ num n
+    rExp = do
+      ex <- Q.elements [rOp, rFun]
+      ex
+        where
+          s' = s `div` 2
+          rOp = do
+            op <- Q.elements [add, mul]
+            e1 <- arbExpr s'
+            e2 <- arbExpr s'
+            return $ op e1 e2
+          rFun = do
+            fun <- Q.elements [Expr.sin, Expr.cos]
+            e <- arbExpr s'
+            return $ fun e
+
+instance Q.Arbitrary Expr where
+  arbitrary = Q.sized arbExpr

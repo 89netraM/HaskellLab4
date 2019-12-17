@@ -28,3 +28,4 @@ executables:
     - base
     - threepenny-gui
     - aeson
+    - QuickCheck
