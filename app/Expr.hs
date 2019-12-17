@@ -108,8 +108,11 @@ prop_ShowReadExpr :: Expr -> Bool
 prop_ShowReadExpr expr = (fromJust $ readExpr $ showExpr expr) == expr
 
 arbExpr :: Int -> Q.Gen Expr
-arbExpr s = Q.frequency [(1, rNum), (s, rExp)]
+arbExpr s = Q.frequency [(1, rOne), (s, rExp)]
   where
+    rOne = do
+      o <- Q.elements [return x, rNum]
+      o
     rNum = do
       n <- Q.choose (0.0, 99.0)
       return $ num n
