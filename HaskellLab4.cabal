@@ -26,6 +26,7 @@ executable HaskellLab4
       Expr
       Calculator
       ThreepennyPages
+      Parsing
       Paths_HaskellLab4
   hs-source-dirs:
       app

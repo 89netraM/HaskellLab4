@@ -18,7 +18,7 @@ description:         ""
 
 executables:
   HaskellLab4:
-    main:                Main.hs
+    main:                Calculator.hs
     source-dirs:         app
     ghc-options:
     - -threaded
