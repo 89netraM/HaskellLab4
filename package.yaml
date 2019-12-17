@@ -26,5 +26,5 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - base
-    - mnist-idx
-    - matrix
+    - threepenny-gui
+    - aeson
