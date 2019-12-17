@@ -136,3 +136,31 @@ instance Eq Operator where
 
 instance Eq Function where
   (Function _ a) == (Function _ b) = a == b
+
+----------------------------------
+-- F
+simplify :: Expr -> Expr
+simplify (Num n) = num n
+simplify Var     = x
+simplify (Op (Operator op s) e1 e2)
+  | isNum s1 && isNum s2 = num (op (getNum s1) (getNum s2))
+  | otherwise            = Op (Operator op s) s1 s2
+  where
+    s1 = simplify e1
+    s2 = simplify e2
+simplify (Fun (Function f s) e)
+  | isNum simp = num (f (getNum simp))
+  | otherwise  = Fun (Function f s) simp
+  where
+    simp = simplify e
+
+
+isNum :: Expr -> Bool
+isNum (Num _) = True
+isNum _       = False
+
+getNum :: Expr -> Double
+getNum (Num n) = n
+
+prop_simplify :: Expr -> Double -> Bool
+prop_simplify e x = eval (simplify e) x == eval e x
