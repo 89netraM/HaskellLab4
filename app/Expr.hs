@@ -3,6 +3,7 @@ module Expr where
 import Prelude as P
 import qualified Test.QuickCheck as Q
 import Parsing
+import Data.Maybe (fromJust)
 
 ------------------------------
 -- A
@@ -15,6 +16,7 @@ data Expr = Num Double
           | Var
           | Op Operator Expr Expr
           | Fun Function Expr
+  deriving Eq
 
 
 x :: Expr
@@ -41,7 +43,7 @@ showExpr :: Expr -> String
 showExpr (Num d) = show d
 showExpr Var = "x"
 showExpr (Op (Operator _ r) e1 e2) =
-  showExpr e1 ++ " " ++ r ++ " " ++ showExpr e2
+  "(" ++ showExpr e1 ++ r ++ showExpr e2 ++ ")"
 showExpr (Fun (Function _ r) e) = r ++ "(" ++ showExpr e ++ ")"
 
 instance Show Expr where
@@ -60,8 +62,22 @@ eval (Fun (Function f _) e) v = f (eval e v)
 readExpr :: String -> Maybe Expr
 readExpr s = parse expr s >>= \(expr, _) -> return expr
 
+zeroOrOne :: Parser a -> Parser [a]
+zeroOrOne p = (p >>= \r -> return [r]) <|> (return [])
+
 number :: Parser Double
-number = read <$> oneOrMore (digit <|> char '.' <|> char 'e' <|> char '-')
+number = do
+  before <- oneOrMore digit
+  (do
+    char '.'
+    after <- oneOrMore digit
+    (do
+      char 'e'
+      neg <- zeroOrOne (char '-')
+      exp <- oneOrMore digit
+      return $ read (before ++ "." ++ after ++ "e" ++ neg ++ exp)
+      ) <|> (return $ read (before ++ "." ++ after))
+    ) <|> (return $ read before)
 
 -- | Parses the specified string or fails.
 string :: String -> Parser String
@@ -88,9 +104,8 @@ factor = (num <$> number) <|> char '(' *> expr <* char ')'
 
 ----------------------------------
 -- E
--- Waiting for Part D
--- prop_ShowReadExpr :: Expr -> Bool
--- prop_ShowReadExpr expr = (readExpr $ showExpr expr) == expr
+prop_ShowReadExpr :: Expr -> Bool
+prop_ShowReadExpr expr = (fromJust $ readExpr $ showExpr expr) == expr
 
 arbExpr :: Int -> Q.Gen Expr
 arbExpr s = Q.frequency [(1, rNum), (s, rExp)]
@@ -115,3 +130,9 @@ arbExpr s = Q.frequency [(1, rNum), (s, rExp)]
 
 instance Q.Arbitrary Expr where
   arbitrary = Q.sized arbExpr
+
+instance Eq Operator where
+  (Operator _ a) == (Operator _ b) = a == b
+
+instance Eq Function where
+  (Function _ a) == (Function _ b) = a == b
