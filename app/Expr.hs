@@ -46,6 +46,10 @@ cos = Fun (Function P.cos "cos")
 showExpr :: Expr -> String
 showExpr (Num d) = show d
 showExpr Var = "x"
+showExpr (Op (Operator _ "+") (Op (Operator op "+") e1 e2) e) =
+  showExpr (Op (Operator op "+") e1 e2) ++ "+" ++ showExpr e
+showExpr (Op (Operator _ "+") e (Op (Operator op "+") e1 e2)) =
+   showExpr e ++ "+" ++ "(" ++ showExpr (Op (Operator op "+") e1 e2) ++ ")"
 showExpr (Op (Operator _ "*") (Op (Operator op "+") e1 e2) e) =
   "(" ++ showExpr (Op (Operator op "+") e1 e2) ++ ")" ++ "*" ++ showExpr e
 showExpr (Op (Operator _ "*") e (Op (Operator op "+") e1 e2)) =
