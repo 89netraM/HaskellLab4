@@ -7,10 +7,14 @@ import Data.Maybe (fromJust)
 
 ------------------------------
 -- A
---type Function = Double -> Double
---type Operator = Double -> Double -> Double
-data Operator = Operator (Double -> Double -> Double) String
-data Function = Function (Double -> Double) String
+data Operator = Operator {
+    opFun :: Double -> Double -> Double
+  , opSym :: String
+}
+data Function = Function {
+    funFun :: Double -> Double
+  , funSym :: String
+}
 
 data Expr = Num Double
           | Var
