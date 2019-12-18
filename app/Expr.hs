@@ -154,15 +154,21 @@ instance Eq Function where
 simplify :: Expr -> Expr
 simplify (Num n) = num n
 simplify Var     = x
-simplify (Op (Operator op s) e1 e2)
-  | isNum s1 && isNum s2 = num (op (getNum s1) (getNum s2))
-  | otherwise            = Op (Operator op s) s1 s2
+simplify (Op op e1 e2)
+  | isNum s1 && isNum s2 = num (opFun op (getNum s1) (getNum s2))
+  | opSym op == "+" && s1 == (Num 0) = s2
+  | opSym op == "+" && s2 == (Num 0) = s1
+  | opSym op == "*" && s1 == (Num 1) = s2
+  | opSym op == "*" && s2 == (Num 1) = s1
+  | opSym op == "*" && s1 == (Num 0) = num 0
+  | opSym op == "*" && s2 == (Num 0) = num 0
+  | otherwise            = Op op s1 s2
   where
     s1 = simplify e1
     s2 = simplify e2
-simplify (Fun (Function f s) e)
-  | isNum simp = num (f (getNum simp))
-  | otherwise  = Fun (Function f s) simp
+simplify (Fun f e)
+  | isNum simp = num (funFun f (getNum simp))
+  | otherwise  = Fun f simp
   where
     simp = simplify e
 
