@@ -5,7 +5,6 @@ import qualified Test.QuickCheck as Q
 import Parsing
 import Data.Maybe (fromJust)
 import Data.Char as C (isSpace)
-import Debug.Trace
 
 ------------------------------
 -- A
@@ -92,10 +91,6 @@ cos = Fun (Function P.cos "cos")
 showExpr :: Expr -> String
 showExpr (Num d) = show d
 showExpr Var = "x"
---showExpr (Op (Operator _ "+") (Op (Operator op "+") e1 e2) e) =
---  showExpr (Op (Operator op "+") e1 e2) ++ "+" ++ showExpr e
---showExpr (Op (Operator _ "+") e (Op (Operator op "+") e1 e2)) =
---   showExpr e ++ "+" ++ "(" ++ showExpr (Op (Operator op "+") e1 e2) ++ ")"
 showExpr (Op (Operator _ "*") e (Op (Operator op "+") e1 e2)) =
   "(" ++  showExpr e ++ ")" ++ "*" ++ "(" ++ showExpr (Op (Operator op "+") e1 e2) ++ ")"
 showExpr (Op (Operator _ "*") (Op (Operator op "+") e1 e2) e) =
@@ -120,35 +115,6 @@ readExpr s = parse expr (filter (not . C.isSpace) s) >>= \(expr, _) -> return ex
 number :: Parser Double
 number = readsP
 
-{-
-number' :: Parser Double
-number' = sicNo <|> simpNo
-
-positive :: Parser Double
-positive = decimal <|> integer
-
-negative :: Parser Double -> Parser Double
-negative p = char '-' *> (p >>= \n -> return (-n))
-
-integer :: Parser Double
-integer = read <$> oneOrMore digit
-
-decimal :: Parser Double
-decimal = integer >>= \i -> do
-  char '.'
-  f <- oneOrMore digit
-  return $ i + read ("0." ++ f)
-
-simpNo :: Parser Double
-simpNo = positive <|> negative positive
-
-sicNo :: Parser Double
-sicNo = simpNo >>= \s -> do
-  char 'e'
-  exp <- integer <|> negative integer
-  return $ s * (10.0 ** exp)
-  -}
-
 -- | Parses the specified string or fails.
 string :: String -> Parser String
 string (c:cs) = char c >>= \s -> string cs >>= \ss -> return $ s:ss
@@ -157,7 +123,7 @@ string _      = return ""
 {- EBNF:
 expr   ::= term {"+" term}.
 term   ::= factor {"*" factor}.
-factor ::= number | "x" | "(" expr ")" | "sin(" expr ")" | "cos(" expr ")".
+factor ::= number | "x" | "(" expr ")" | "sin" expr | "cos" expr.
 -}
 
 expr :: Parser Expr
@@ -176,9 +142,6 @@ factor = (num <$> number) <|> char '(' *> expr <* char ')'
 -- E
 prop_ShowReadExpr :: Expr -> Bool
 prop_ShowReadExpr expr = (fromJust $ readExpr $ showExpr expr) == expr
-
-prop_showReadDouble :: Double -> Bool
-prop_showReadDouble x = parse number (show x) == Just (x,"")
 
 arbExpr :: Int -> Q.Gen Expr
 arbExpr s = Q.frequency [(1, rOne), (s, rExp)]
@@ -206,17 +169,6 @@ arbExpr s = Q.frequency [(1, rOne), (s, rExp)]
 
 instance Q.Arbitrary Expr where
   arbitrary = Q.sized arbExpr
-  shrink = shrinkE
-
---Shrink function to simplify testing
-shrinkE :: Expr -> [Expr]
-shrinkE (Op op e1 e2) =
-  [e1, e2] ++
-  [Op op e1' e2 | e1' <- shrinkE e1] ++
-  [Op op e1 e2' | e2' <- shrinkE e2]
-shrinkE (Fun f e) = e : map (Fun f) (shrinkE e)
-shrinkE Var = []
-shrinkE (Num n) = [Var]
 
 ----------------------------------
 -- F
@@ -231,7 +183,6 @@ simplify (Op op e1 e2)
   | opSym op == "*" && s2 == Num 1 = s1
   | opSym op == "*" && s1 == Num 0 = num 0
   | opSym op == "*" && s2 == Num 0 = num 0
---  | e1 == Var && e2 == Var =  mul (Num ((opFun op) 1.0 1.0)) Var
   | otherwise            = Op op s1 s2
   where
     s1 = simplify e1
