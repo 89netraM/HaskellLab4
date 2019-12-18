@@ -203,7 +203,7 @@ prop_simplify e x = eval (simplify e) x == eval e x
 differentiate :: Expr -> Expr
 differentiate (Op (Operator _ "+") e1 e2) = simplify $ add (differentiate e1) (differentiate e2)
 differentiate (Op (Operator _ "*") e1 e2) = simplify $ add (mul (differentiate e1) e2) (mul e1 (differentiate e2))
-differentiate (Fun (Function _ "sin") e)  = simplify $ Expr.cos (differentiate e)
-differentiate (Fun (Function _ "cos") e)  = simplify $ mul (num (-1)) (Expr.sin (differentiate e))
+differentiate (Fun (Function _ "sin") e)  = simplify $ mul (Expr.cos e) (differentiate e)
+differentiate (Fun (Function _ "cos") e)  = simplify $ mul (mul (num (-1)) (Expr.sin e)) (differentiate e)
 differentiate Var                         = num 1
 differentiate _                           = num 0
