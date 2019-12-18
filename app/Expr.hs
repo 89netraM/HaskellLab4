@@ -53,7 +53,7 @@ showExpr (Op (Operator _ "*") e (Op (Operator op "+") e1 e2)) =
 showExpr (Op op e1 e2) = showExpr e1 ++ opSym op ++ showExpr e2
 showExpr (Fun fun (Op op e1 e2)) =
   funSym fun ++ "(" ++ showExpr (Op op e1 e2) ++ ")"
-showExpr (Fun fun e) = funSym fun ++ showExpr e
+showExpr (Fun fun e) = funSym fun ++ " " ++ showExpr e
 
 instance Show Expr where
   show = showExpr
