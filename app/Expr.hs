@@ -4,6 +4,7 @@ import Prelude as P
 import qualified Test.QuickCheck as Q
 import Parsing
 import Data.Maybe (fromJust)
+import Data.Char as C (isSpace)
 
 ------------------------------
 -- A
@@ -73,24 +74,34 @@ eval (Fun (Function f _) e) v = f (eval e v)
 ----------------------------------
 -- D
 readExpr :: String -> Maybe Expr
-readExpr s = parse expr s >>= \(expr, _) -> return expr
-
-zeroOrOne :: Parser a -> Parser [a]
-zeroOrOne p = p >>= \r -> return [r] <|> return []
+readExpr s = parse expr (filter (not . C.isSpace) s) >>= \(expr, _) -> return expr
 
 number :: Parser Double
-number = do
-  before <- oneOrMore digit
-  (do
-    char '.'
-    after <- oneOrMore digit
-    (do
-      char 'e'
-      neg <- zeroOrOne (char '-')
-      exp <- oneOrMore digit
-      return $ read (before ++ "." ++ after ++ "e" ++ neg ++ exp)
-      ) <|> (return $ read (before ++ "." ++ after))
-    ) <|> return (read before)
+number = sicNo <|> simpNo
+
+positive :: Parser Double
+positive = decimal <|> integer
+
+negative :: Parser Double -> Parser Double
+negative p = char '-' *> (p >>= \n -> return (-n))
+
+integer :: Parser Double
+integer = read <$> oneOrMore digit
+
+decimal :: Parser Double
+decimal = integer >>= \i -> do
+  char '.'
+  f <- oneOrMore digit
+  return $ i + read ("0." ++ f)
+
+simpNo :: Parser Double
+simpNo = positive <|> negative positive
+
+sicNo :: Parser Double
+sicNo = simpNo >>= \s -> do
+  char 'e'
+  exp <- integer <|> negative integer
+  return $ s * (10.0 ** exp)
 
 -- | Parses the specified string or fails.
 string :: String -> Parser String
@@ -112,8 +123,8 @@ term = foldl1 mul <$> chain factor (char '*')
 factor :: Parser Expr
 factor = (num <$> number) <|> char '(' *> expr <* char ')'
            <|> (char 'x' >> (return x))
-           <|> string "sin" *> char '(' *> (Expr.sin <$> expr) <* char ')'
-           <|> string "cos" *> char '(' *> (Expr.cos <$> expr) <* char ')'
+           <|> string "sin" *> (Expr.sin <$> factor)
+           <|> string "cos" *> (Expr.cos <$> factor)
 
 ----------------------------------
 -- E
@@ -193,7 +204,7 @@ prop_simplify e x = eval (simplify e) x == eval e x
 differentiate :: Expr -> Expr
 differentiate (Op (Operator _ "+") e1 e2) = simplify $ add (differentiate e1) (differentiate e2)
 differentiate (Op (Operator _ "*") e1 e2) = simplify $ add (mul (differentiate e1) e2) (mul e1 (differentiate e2))
-differentiate (Fun (Function _ "sin") e)  = simplify $ Expr.cos (differentiate e)
-differentiate (Fun (Function _ "cos") e)  = simplify $ mul (num (-1)) (Expr.sin (differentiate e))
+differentiate (Fun (Function _ "sin") e)  = simplify $ mul (Expr.cos e) (differentiate e)
+differentiate (Fun (Function _ "cos") e)  = simplify $ mul (mul (num (-1)) (Expr.sin e)) (differentiate e)
 differentiate Var                         = num 1
 differentiate _                           = num 0
