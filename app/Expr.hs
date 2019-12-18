@@ -42,9 +42,11 @@ cos = Fun (Function P.cos "cos")
 showExpr :: Expr -> String
 showExpr (Num d) = show d
 showExpr Var = "x"
-showExpr (Op (Operator _ r) e1 e2) =
-  "(" ++ showExpr e1 ++ r ++ showExpr e2 ++ ")"
-showExpr (Fun (Function _ r) e) = r ++ "(" ++ showExpr e ++ ")"
+showExpr (Op (Operator _ "*") (Op (Operator _ "+") e1 e2) e)
+showExpr (Op op e1 e2) = showExpr e1 ++ r ++ showExpr e2
+showExpr (Fun (Function _ f) (Op (Operator _ r) e1 e2)) =
+  f ++ "(" ++ showExpr (Op (Operator _ r) e1 e2) ++ ")"
+showExpr (Fun (Function _ f) e) = f ++ showExpr e
 
 instance Show Expr where
   show = showExpr
@@ -173,7 +175,7 @@ prop_simplify e x = eval (simplify e) x == eval e x
 differentiate :: Expr -> Expr
 differentiate (Op (Operator _ "+") e1 e2) = simplify $ add (differentiate e1) (differentiate e2)
 differentiate (Op (Operator _ "*") e1 e2) = simplify $ add (mul (differentiate e1) e2) (mul e1 (differentiate e2))
-differentiate (Fun (Function _ "sin") e)  = simplify $ cos (differentiate e)
-differentiate (Fun (Function _ "cos") e)  = simplify $ mul (num (-1)) (sin (differentiate e))
+differentiate (Fun (Function _ "sin") e)  = simplify $ Expr.cos (differentiate e)
+differentiate (Fun (Function _ "cos") e)  = simplify $ mul (num (-1)) (Expr.sin (differentiate e))
 differentiate Var                         = num 1
 differentiate _                           = num 0
