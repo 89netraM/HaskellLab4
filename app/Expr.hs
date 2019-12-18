@@ -184,7 +184,7 @@ arbExpr :: Int -> Q.Gen Expr
 arbExpr s = Q.frequency [(1, rOne), (s, rExp)]
   where
     rOne = do
-      o <- Q.elements [return x] --,rNum
+      o <- Q.elements [return x, rNum]
       o
     rNum = do
       n <- Q.choose (0.0, 99.0)
