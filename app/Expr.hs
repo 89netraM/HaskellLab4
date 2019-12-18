@@ -80,17 +80,18 @@ zeroOrOne p = p >>= \r -> return [r] <|> return []
 
 number :: Parser Double
 number = do
+  neg <- zeroOrOne (char '-')
   before <- oneOrMore digit
   (do
     char '.'
     after <- oneOrMore digit
     (do
       char 'e'
-      neg <- zeroOrOne (char '-')
+      negExp <- zeroOrOne (char '-')
       exp <- oneOrMore digit
-      return $ read (before ++ "." ++ after ++ "e" ++ neg ++ exp)
-      ) <|> (return $ read (before ++ "." ++ after))
-    ) <|> return (read before)
+      return $ read (neg ++ before ++ "." ++ after ++ "e" ++ negExp ++ exp)
+      ) <|> (return $ read (neg ++ before ++ "." ++ after))
+    ) <|> (return $ read (neg ++ before))
 
 -- | Parses the specified string or fails.
 string :: String -> Parser String
