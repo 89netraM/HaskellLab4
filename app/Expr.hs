@@ -5,6 +5,7 @@ import qualified Test.QuickCheck as Q
 import Parsing
 import Data.Maybe (fromJust)
 import Data.Char as C (isSpace)
+import Debug.Trace
 
 ------------------------------
 -- A
@@ -12,17 +13,61 @@ data Operator = Operator {
     opFun :: Double -> Double -> Double
   , opSym :: String
 }
+
+showOp :: Operator -> String
+showOp = opSym
+
+instance Show Operator where
+  show = showOp
+
+instance Eq Operator where
+  (Operator _ a) == (Operator _ b) = a == b
+
 data Function = Function {
     funFun :: Double -> Double
   , funSym :: String
 }
 
+showFun :: Function -> String
+showFun = funSym
+
+instance Show Function where
+  show = showFun
+
+instance Eq Function where
+  (Function _ a) == (Function _ b) = a == b
+
 data Expr = Num Double
           | Var
           | Op Operator Expr Expr
           | Fun Function Expr
-  deriving Eq
 
+instance Eq Expr where
+  (==) = eqExpr
+
+instance Show Expr where
+  show = showExpr
+
+eqExpr :: Expr -> Expr -> Bool
+eqExpr x y = eqStructure (assoc x) (assoc y)
+
+assoc :: Expr -> Expr
+assoc (Op op (Op op' e1 e2) e3) | op == op'
+    = assoc (Op op e1 (Op op' e2 e3))
+assoc (Op op e1 e2) = Op op (assoc e1) (assoc e2)
+assoc (Fun f e) = Fun f (assoc e)
+assoc Var = Var
+assoc (Num d) = Num d
+
+eqStructure :: Expr -> Expr -> Bool
+eqStructure (Op op e1 e2) (Op op' e1' e2')
+  = op == op' && eqStructure e1 e1' && eqStructure e2 e2'
+eqStructure (Fun f e) (Fun f' e') = f == f' && eqStructure e e'
+eqStructure (Num a) (Num b) = a == b
+eqStructure Var Var = True
+eqStructure _ _ = False
+
+------------------------------------------------------------
 
 x :: Expr
 x = Var
@@ -47,22 +92,18 @@ cos = Fun (Function P.cos "cos")
 showExpr :: Expr -> String
 showExpr (Num d) = show d
 showExpr Var = "x"
-showExpr (Op (Operator _ "+") (Op (Operator op "+") e1 e2) e) =
-  showExpr (Op (Operator op "+") e1 e2) ++ "+" ++ showExpr e
-showExpr (Op (Operator _ "+") e (Op (Operator op "+") e1 e2)) =
-   showExpr e ++ "+" ++ "(" ++ showExpr (Op (Operator op "+") e1 e2) ++ ")"
-showExpr (Op (Operator _ "*") (Op (Operator op "+") e1 e2) e) =
-  "(" ++ showExpr (Op (Operator op "+") e1 e2) ++ ")" ++ "*" ++ showExpr e
+--showExpr (Op (Operator _ "+") (Op (Operator op "+") e1 e2) e) =
+--  showExpr (Op (Operator op "+") e1 e2) ++ "+" ++ showExpr e
+--showExpr (Op (Operator _ "+") e (Op (Operator op "+") e1 e2)) =
+--   showExpr e ++ "+" ++ "(" ++ showExpr (Op (Operator op "+") e1 e2) ++ ")"
 showExpr (Op (Operator _ "*") e (Op (Operator op "+") e1 e2)) =
-    showExpr e ++ "*" ++ "(" ++ showExpr (Op (Operator op "+") e1 e2) ++ ")"
+  "(" ++  showExpr e ++ ")" ++ "*" ++ "(" ++ showExpr (Op (Operator op "+") e1 e2) ++ ")"
+showExpr (Op (Operator _ "*") (Op (Operator op "+") e1 e2) e) =
+  "(" ++ showExpr (Op (Operator op "+") e1 e2) ++ ")" ++ "*" ++ "(" ++ showExpr e ++ ")"
 showExpr (Op op e1 e2) = showExpr e1 ++ opSym op ++ showExpr e2
 showExpr (Fun fun (Op op e1 e2)) =
   funSym fun ++ "(" ++ showExpr (Op op e1 e2) ++ ")"
 showExpr (Fun fun e) = funSym fun ++ " " ++ showExpr e
-
-instance Show Expr where
-  show = showExpr
-
 ----------------------------------
 -- C
 eval :: Expr -> Double -> Double
@@ -77,7 +118,11 @@ readExpr :: String -> Maybe Expr
 readExpr s = parse expr (filter (not . C.isSpace) s) >>= \(expr, _) -> return expr
 
 number :: Parser Double
-number = sicNo <|> simpNo
+number = readsP
+
+{-
+number' :: Parser Double
+number' = sicNo <|> simpNo
 
 positive :: Parser Double
 positive = decimal <|> integer
@@ -102,6 +147,7 @@ sicNo = simpNo >>= \s -> do
   char 'e'
   exp <- integer <|> negative integer
   return $ s * (10.0 ** exp)
+  -}
 
 -- | Parses the specified string or fails.
 string :: String -> Parser String
@@ -131,11 +177,14 @@ factor = (num <$> number) <|> char '(' *> expr <* char ')'
 prop_ShowReadExpr :: Expr -> Bool
 prop_ShowReadExpr expr = (fromJust $ readExpr $ showExpr expr) == expr
 
+prop_showReadDouble :: Double -> Bool
+prop_showReadDouble x = parse number (show x) == Just (x,"")
+
 arbExpr :: Int -> Q.Gen Expr
 arbExpr s = Q.frequency [(1, rOne), (s, rExp)]
   where
     rOne = do
-      o <- Q.elements [return x, rNum]
+      o <- Q.elements [return x] --,rNum
       o
     rNum = do
       n <- Q.choose (0.0, 99.0)
@@ -157,12 +206,17 @@ arbExpr s = Q.frequency [(1, rOne), (s, rExp)]
 
 instance Q.Arbitrary Expr where
   arbitrary = Q.sized arbExpr
+  shrink = shrinkE
 
-instance Eq Operator where
-  (Operator _ a) == (Operator _ b) = a == b
-
-instance Eq Function where
-  (Function _ a) == (Function _ b) = a == b
+--Shrink function to simplify testing
+shrinkE :: Expr -> [Expr]
+shrinkE (Op op e1 e2) =
+  [e1, e2] ++
+  [Op op e1' e2 | e1' <- shrinkE e1] ++
+  [Op op e1 e2' | e2' <- shrinkE e2]
+shrinkE (Fun f e) = e : map (Fun f) (shrinkE e)
+shrinkE Var = []
+shrinkE (Num n) = [Var]
 
 ----------------------------------
 -- F
@@ -171,13 +225,13 @@ simplify (Num n) = num n
 simplify Var     = x
 simplify (Op op e1 e2)
   | isNum s1 && isNum s2 = num (opFun op (getNum s1) (getNum s2))
-  | opSym op == "+" && s1 == (Num 0) = s2
-  | opSym op == "+" && s2 == (Num 0) = s1
-  | opSym op == "*" && s1 == (Num 1) = s2
-  | opSym op == "*" && s2 == (Num 1) = s1
-  | opSym op == "*" && s1 == (Num 0) = num 0
-  | opSym op == "*" && s2 == (Num 0) = num 0
-  | e1 == Var && e2 == Var =  mul (Num ((opFun op) 1.0 1.0)) Var
+  | opSym op == "+" && s1 == Num 0 = s2
+  | opSym op == "+" && s2 == Num 0 = s1
+  | opSym op == "*" && s1 == Num 1 = s2
+  | opSym op == "*" && s2 == Num 1 = s1
+  | opSym op == "*" && s1 == Num 0 = num 0
+  | opSym op == "*" && s2 == Num 0 = num 0
+--  | e1 == Var && e2 == Var =  mul (Num ((opFun op) 1.0 1.0)) Var
   | otherwise            = Op op s1 s2
   where
     s1 = simplify e1
