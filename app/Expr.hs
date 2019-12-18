@@ -76,23 +76,32 @@ eval (Fun (Function f _) e) v = f (eval e v)
 readExpr :: String -> Maybe Expr
 readExpr s = parse expr (filter (not . C.isSpace) s) >>= \(expr, _) -> return expr
 
-zeroOrOne :: Parser a -> Parser [a]
-zeroOrOne p = p >>= \r -> return [r] <|> return []
-
 number :: Parser Double
-number = do
-  neg <- zeroOrOne (char '-')
-  before <- oneOrMore digit
-  (do
-    char '.'
-    after <- oneOrMore digit
-    (do
-      char 'e'
-      negExp <- zeroOrOne (char '-')
-      exp <- oneOrMore digit
-      return $ read (neg ++ before ++ "." ++ after ++ "e" ++ negExp ++ exp)
-      ) <|> (return $ read (neg ++ before ++ "." ++ after))
-    ) <|> (return $ read (neg ++ before))
+number = sicNo <|> simpNo
+
+positive :: Parser Double
+positive = decimal <|> integer
+
+negative :: Parser Double -> Parser Double
+negative p = char '-' *> (p >>= \n -> return (-n))
+
+integer :: Parser Double
+integer = read <$> oneOrMore digit
+
+decimal :: Parser Double
+decimal = integer >>= \i -> do
+  char '.'
+  f <- oneOrMore digit
+  return $ i + read ("0." ++ f)
+
+simpNo :: Parser Double
+simpNo = positive <|> negative positive
+
+sicNo :: Parser Double
+sicNo = simpNo >>= \s -> do
+  char 'e'
+  exp <- integer <|> negative integer
+  return $ s * (10.0 ** exp)
 
 -- | Parses the specified string or fails.
 string :: String -> Parser String
