@@ -166,6 +166,7 @@ simplify (Op op e1 e2)
   | opSym op == "*" && s2 == (Num 1) = s1
   | opSym op == "*" && s1 == (Num 0) = num 0
   | opSym op == "*" && s2 == (Num 0) = num 0
+  | e1 == Var && e2 == Var =  mul (Num ((opFun op) 1.0 1.0)) Var
   | otherwise            = Op op s1 s2
   where
     s1 = simplify e1
