@@ -46,11 +46,14 @@ cos = Fun (Function P.cos "cos")
 showExpr :: Expr -> String
 showExpr (Num d) = show d
 showExpr Var = "x"
-showExpr (Op (Operator _ "*") (Op (Operator _ "+") e1 e2) e)
-showExpr (Op op e1 e2) = showExpr e1 ++ r ++ showExpr e2
-showExpr (Fun (Function _ f) (Op (Operator _ r) e1 e2)) =
-  f ++ "(" ++ showExpr (Op (Operator _ r) e1 e2) ++ ")"
-showExpr (Fun (Function _ f) e) = f ++ showExpr e
+showExpr (Op (Operator _ "*") (Op (Operator op "+") e1 e2) e) =
+  "(" ++ showExpr (Op (Operator op "+") e1 e2) ++ ")" ++ "*" ++ showExpr e
+showExpr (Op (Operator _ "*") e (Op (Operator op "+") e1 e2)) =
+    showExpr e ++ "*" ++ "(" ++ showExpr (Op (Operator op "+") e1 e2) ++ ")"
+showExpr (Op op e1 e2) = showExpr e1 ++ opSym op ++ showExpr e2
+showExpr (Fun fun (Op op e1 e2)) =
+  funSym fun ++ "(" ++ showExpr (Op op e1 e2) ++ ")"
+showExpr (Fun fun e) = funSym fun ++ showExpr e
 
 instance Show Expr where
   show = showExpr
@@ -69,7 +72,7 @@ readExpr :: String -> Maybe Expr
 readExpr s = parse expr s >>= \(expr, _) -> return expr
 
 zeroOrOne :: Parser a -> Parser [a]
-zeroOrOne p = (p >>= \r -> return [r]) <|> (return [])
+zeroOrOne p = p >>= \r -> return [r] <|> return []
 
 number :: Parser Double
 number = do
@@ -83,7 +86,7 @@ number = do
       exp <- oneOrMore digit
       return $ read (before ++ "." ++ after ++ "e" ++ neg ++ exp)
       ) <|> (return $ read (before ++ "." ++ after))
-    ) <|> (return $ read before)
+    ) <|> return (read before)
 
 -- | Parses the specified string or fails.
 string :: String -> Parser String
