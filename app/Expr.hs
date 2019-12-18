@@ -4,6 +4,7 @@ import Prelude as P
 import qualified Test.QuickCheck as Q
 import Parsing
 import Data.Maybe (fromJust)
+import Data.Char as C (isSpace)
 
 ------------------------------
 -- A
@@ -73,7 +74,7 @@ eval (Fun (Function f _) e) v = f (eval e v)
 ----------------------------------
 -- D
 readExpr :: String -> Maybe Expr
-readExpr s = parse expr s >>= \(expr, _) -> return expr
+readExpr s = parse expr (filter (not . C.isSpace) s) >>= \(expr, _) -> return expr
 
 zeroOrOne :: Parser a -> Parser [a]
 zeroOrOne p = p >>= \r -> return [r] <|> return []
@@ -113,8 +114,8 @@ term = foldl1 mul <$> chain factor (char '*')
 factor :: Parser Expr
 factor = (num <$> number) <|> char '(' *> expr <* char ')'
            <|> (char 'x' >> (return x))
-           <|> string "sin" *> char '(' *> (Expr.sin <$> expr) <* char ')'
-           <|> string "cos" *> char '(' *> (Expr.cos <$> expr) <* char ')'
+           <|> string "sin" *> (Expr.sin <$> factor)
+           <|> string "cos" *> (Expr.cos <$> factor)
 
 ----------------------------------
 -- E
